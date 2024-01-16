@@ -90,10 +90,6 @@ Our default, provided install method is based on Conda package and environment m
 SET DISTUTILS_USE_SDK=1 # Windows only
 conda env create --file environment.yml
 conda activate gaussian_splatting
-
-SET DISTUTILS_USE_SDK=1 # Windows only
-conda env create --file environment.yml
-conda activate gaussian_splatting
 ```
 Please note that this process assumes that you have CUDA SDK **11** installed, not **12**. For modifications, see below.
 
@@ -315,13 +311,17 @@ If you cloned with submodules (e.g., using ```--recursive```), the source code f
 
 #### Windows
 CMake should take care of your dependencies.
+
+copy 4 files from C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\extras\visual_studio_integration\MSBuildExtensions
+
+pasted into C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\BuildCustomizations
 ```shell
 cd SIBR_viewers
 cmake -Bbuild .
 cmake --build build --target install --config RelWithDebInfo
 
 # you may need to add into path
- $env:path += ";C:\Program Files\cmake\bin"
+$env:path += ";C:\Program Files\cmake\bin"
 $env:path += ";C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8\bin"
 ```
 You may specify a different configuration, e.g. ```Debug``` if you need more control during development.
