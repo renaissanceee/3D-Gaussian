@@ -90,6 +90,10 @@ Our default, provided install method is based on Conda package and environment m
 SET DISTUTILS_USE_SDK=1 # Windows only
 conda env create --file environment.yml
 conda activate gaussian_splatting
+
+SET DISTUTILS_USE_SDK=1 # Windows only
+conda env create --file environment.yml
+conda activate gaussian_splatting
 ```
 Please note that this process assumes that you have CUDA SDK **11** installed, not **12**. For modifications, see below.
 
@@ -210,6 +214,10 @@ If you want to evaluate our [pre-trained models](https://repo-sam.inria.fr/fungr
 ```shell
 python render.py -m <path to pre-trained model> -s <path to COLMAP dataset>
 python metrics.py -m <path to pre-trained model>
+
+e.g.
+python render.py -m ./models/train/ -s ./dataset/tandt_db/tandt/train/
+python metrics.py -m ./models/train/
 ```
 
 <details>
@@ -311,6 +319,10 @@ CMake should take care of your dependencies.
 cd SIBR_viewers
 cmake -Bbuild .
 cmake --build build --target install --config RelWithDebInfo
+
+# you may need to add into path
+ $env:path += ";C:\Program Files\cmake\bin"
+$env:path += ";C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8\bin"
 ```
 You may specify a different configuration, e.g. ```Debug``` if you need more control during development.
 
@@ -378,6 +390,9 @@ https://github.com/graphdeco-inria/gaussian-splatting/assets/40643808/0940547f-1
 After extracting or installing the viewers, you may run the compiled ```SIBR_gaussianViewer_app[_config]``` app in ```<SIBR install dir>/bin```, e.g.: 
 ```shell
 ./<SIBR install dir>/bin/SIBR_gaussianViewer_app -m <path to trained model>
+
+e.g.
+./viewers/bin/SIBR_gaussianViewer_app -m ./models/train/
 ```
 
 It should suffice to provide the ```-m``` parameter pointing to a trained model directory. Alternatively, you can specify an override location for training input data using ```-s```. To use a specific resolution other than the auto-chosen one, specify ```--rendering-size <width> <height>```. Combine it with ```--force-aspect-ratio``` if you want the exact resolution and don't mind image distortion. 
