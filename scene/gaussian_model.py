@@ -45,7 +45,7 @@ class GaussianModel:
 
     def __init__(self, sh_degree : int):
         self.active_sh_degree = 0
-        self.max_sh_degree = sh_degree  
+        self.max_sh_degree = sh_degree  # 3
         self._xyz = torch.empty(0) # 中心点：3D-Gaussian的均值
         self._features_dc = torch.empty(0) # 球谐系数
         self._features_rest = torch.empty(0)
@@ -126,6 +126,28 @@ class GaussianModel:
     def create_from_pcd(self, pcd : BasicPointCloud, spatial_lr_scale : float):
         # 点云PCD -> 3D_Gau
         self.spatial_lr_scale = spatial_lr_scale
+        print("=======================")
+        # print(pcd.points.shape)#(182686, 3)
+        # print(pcd.colors.shape)#(182686, 3) 在(0,1)之间
+        # print(pcd.normals)#(182686, 3) all zero
+        # max and min
+        column_max_values = np.max(pcd.points, axis=0)#[240     6 209 ]
+        column_min_values = np.min(pcd.points, axis=0)#[-160 -113 -141]
+        "question: the range of  pcd.points ???"
+        # train
+        # [240     6 209 ]
+        # [-160 -113 -141]
+        # truck
+        # [152.31262   41.005173  81.845825]
+        # [-173.35045  -27.51273 -174.72842]
+        "random initial"
+        random_pcd = BasicPointCloud(
+            points=np.random.uniform(low=-160, high=160, size=(182686, 3)),
+            colors=np.random.uniform(low=0, high=1, size=(182686, 3)),
+            normals=np.zeros((182686, 3))
+        )
+        pcd=random_pcd
+
         fused_point_cloud = torch.tensor(np.asarray(pcd.points)).float().cuda()
         fused_color = RGB2SH(torch.tensor(np.asarray(pcd.colors)).float().cuda())
         features = torch.zeros((fused_color.shape[0], 3, (self.max_sh_degree + 1) ** 2)).float().cuda()
