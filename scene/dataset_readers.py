@@ -164,11 +164,16 @@ def readColmapSceneInfo(path, images, eval, llffhold=8):
         except:
             xyz, rgb, _ = read_points3D_text(txt_path)
         storePly(ply_path, xyz, rgb)
-    try:
-        pcd = fetchPly(ply_path)
-    except:
-        pcd = None
-
+    # try:
+    #     pcd = fetchPly(ply_path)
+    # except:
+    #     pcd = None
+    "random initial"
+    pcd = BasicPointCloud(
+        points=np.random.uniform(low=-160, high=160, size=(182686, 3)),
+        colors=np.random.uniform(low=0, high=1, size=(182686, 3)),
+        normals=np.zeros((182686, 3))
+    )
     scene_info = SceneInfo(point_cloud=pcd,
                            train_cameras=train_cam_infos,
                            test_cameras=test_cam_infos,
