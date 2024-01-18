@@ -204,6 +204,8 @@ By default, the trained models use all available images in the dataset. To train
 python train.py -s <path to COLMAP or NeRF Synthetic dataset> --eval # Train with train/test split
 python render.py -m <path to trained model> # Generate renderings
 python metrics.py -m <path to trained model> # Compute error metrics on renderings
+
+--eval: if w/o, the metrics is nan! 
 ```
 
 If you want to evaluate our [pre-trained models](https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/datasets/pretrained/models.zip), you will have to download the corresponding source data sets and indicate their location to ```render.py``` with an additional ```--source_path/-s``` flag. Note: The pre-trained models were created with the release codebase. This code base has been cleaned up and includes bugfixes, hence the metrics you get from evaluating them will differ from those in the paper.
@@ -393,6 +395,8 @@ After extracting or installing the viewers, you may run the compiled ```SIBR_gau
 
 e.g.
 ./viewers/bin/SIBR_gaussianViewer_app -m ./models/train/
+./viewers/bin/SIBR_gaussianViewer_app -m ./modelsoutput/745f977e-a/
+
 ```
 
 It should suffice to provide the ```-m``` parameter pointing to a trained model directory. Alternatively, you can specify an override location for training input data using ```-s```. To use a specific resolution other than the auto-chosen one, specify ```--rendering-size <width> <height>```. Combine it with ```--force-aspect-ratio``` if you want the exact resolution and don't mind image distortion. 
