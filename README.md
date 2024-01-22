@@ -456,6 +456,8 @@ For rasterization, the camera models must be either a SIMPLE_PINHOLE or PINHOLE 
  If you have COLMAP and ImageMagick on your system path, you can simply run 
 ```shell
 python convert.py -s <location> [--resize] #If not resizing, ImageMagick is not needed
+e.g.
+python convert.py -s ./dataset/tandt_db/tandt/train_LR/ --colmap_executable ../COLMAP-3.8-windows-cuda/COLMAP.bat
 ```
 Alternatively, you can use the optional parameters ```--colmap_executable``` and ```--magick_executable``` to point to the respective paths. Please note that on Windows, the executable should point to the COLMAP ```.bat``` file that takes care of setting the execution environment. Once done, ```<location>``` will contain the expected COLMAP data set structure with undistorted, resized input images, in addition to your original images and some temporary (distorted) data in the directory ```distorted```.
 
