@@ -140,13 +140,6 @@ class GaussianModel:
         # truck
         # [152.31262   41.005173  81.845825]
         # [-173.35045  -27.51273 -174.72842]
-        "random initial"
-        random_pcd = BasicPointCloud(
-            points=np.random.uniform(low=-160, high=160, size=(182686, 3)),
-            colors=np.random.uniform(low=0, high=1, size=(182686, 3)),
-            normals=np.zeros((182686, 3))
-        )
-        pcd=random_pcd
 
         fused_point_cloud = torch.tensor(np.asarray(pcd.points)).float().cuda()
         fused_color = RGB2SH(torch.tensor(np.asarray(pcd.colors)).float().cuda())
