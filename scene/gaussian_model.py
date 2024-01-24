@@ -14,6 +14,7 @@ import numpy as np
 from utils.general_utils import inverse_sigmoid, get_expon_lr_func, build_rotation
 from torch import nn
 import os
+import logging
 from utils.system_utils import mkdir_p
 from plyfile import PlyData, PlyElement
 from utils.sh_utils import RGB2SH
@@ -126,14 +127,12 @@ class GaussianModel:
     def create_from_pcd(self, pcd : BasicPointCloud, spatial_lr_scale : float):
         # 点云PCD -> 3D_Gau
         self.spatial_lr_scale = spatial_lr_scale
-        print("=======================")
         # print(pcd.points.shape)#(182686, 3)
         # print(pcd.colors.shape)#(182686, 3) 在(0,1)之间
         # print(pcd.normals)#(182686, 3) all zero
         # max and min
-        column_max_values = np.max(pcd.points, axis=0)#[240     6 209 ]
-        column_min_values = np.min(pcd.points, axis=0)#[-160 -113 -141]
-        "question: the range of  pcd.points ???"
+        # column_max_values = np.max(pcd.points, axis=0)#[240     6 209 ]
+        # column_min_values = np.min(pcd.points, axis=0)#[-160 -113 -141]
         # train
         # [240     6 209 ]
         # [-160 -113 -141]
@@ -146,8 +145,9 @@ class GaussianModel:
         features = torch.zeros((fused_color.shape[0], 3, (self.max_sh_degree + 1) ** 2)).float().cuda()
         features[:, :3, 0 ] = fused_color
         features[:, 3:, 1:] = 0.0
+        logging.info("Number of points at initialisation = {}".format(fused_point_cloud.shape[0]))
+        print("Number of points at initialisation = {}".format(fused_point_cloud.shape[0]))
 
-        print("Number of points at initialisation : ", fused_point_cloud.shape[0])
         # distCUDA2:点云每个点到最近k个点的平均距离
         dist2 = torch.clamp_min(distCUDA2(torch.from_numpy(np.asarray(pcd.points)).float().cuda()), 0.0000001)# (p,)
         scales = torch.log(torch.sqrt(dist2))[...,None].repeat(1, 3)# (p,3): xyz上的尺度
@@ -163,6 +163,40 @@ class GaussianModel:
         self._rotation = nn.Parameter(rots.requires_grad_(True))
         self._opacity = nn.Parameter(opacities.requires_grad_(True))
         self.max_radii2D = torch.zeros((self.get_xyz.shape[0]), device="cuda")# (p,)
+
+    def add_points(self, add_method, extra_points):
+        if add_method=="uniform":
+            print("add more points(uniformly):", extra_points)
+            # 点云PCD -> 3D_Gau
+            # print(pcd.points.shape)#(182686, 3)
+            # print(pcd.colors.shape)#(182686, 3) 在(0,1)之间
+            # print(pcd.normals)#(182686, 3) all zero
+            # max and min
+            # column_max_values = np.max(pcd.points, axis=0)#[240     6 209 ]
+            # column_min_values = np.min(pcd.points, axis=0)#[-160 -113 -141]
+
+            fused_point_cloud = torch.tensor(np.asarray(pcd.points)).float().cuda()
+            fused_color = RGB2SH(torch.tensor(np.asarray(pcd.colors)).float().cuda())
+            features = torch.zeros((fused_color.shape[0], 3, (self.max_sh_degree + 1) ** 2)).float().cuda()
+            features[:, :3, 0 ] = fused_color
+            features[:, 3:, 1:] = 0.0
+
+            print("Number of points at initialisation : ", fused_point_cloud.shape[0])
+            # distCUDA2:点云每个点到最近k个点的平均距离
+            dist2 = torch.clamp_min(distCUDA2(torch.from_numpy(np.asarray(pcd.points)).float().cuda()), 0.0000001)# (p,)
+            scales = torch.log(torch.sqrt(dist2))[...,None].repeat(1, 3)# (p,3): xyz上的尺度
+            rots = torch.zeros((fused_point_cloud.shape[0], 4), device="cuda")# (p,4): 旋转参数
+            rots[:, 0] = 1
+
+            opacities = inverse_sigmoid(0.1 * torch.ones((fused_point_cloud.shape[0], 1), dtype=torch.float, device="cuda"))# (p,1): 不透明度
+
+            self._xyz = nn.Parameter(fused_point_cloud.requires_grad_(True))# (p,3)
+            self._features_dc = nn.Parameter(features[:,:,0:1].transpose(1, 2).contiguous().requires_grad_(True))# (p,1，3)
+            self._features_rest = nn.Parameter(features[:,:,1:].transpose(1, 2).contiguous().requires_grad_(True))# (p,15，3)
+            self._scaling = nn.Parameter(scales.requires_grad_(True))
+            self._rotation = nn.Parameter(rots.requires_grad_(True))
+            self._opacity = nn.Parameter(opacities.requires_grad_(True))
+            self.max_radii2D = torch.zeros((self.get_xyz.shape[0]), device="cuda")# (p,)
 
     def training_setup(self, training_args):
         # 为3D-Gaussian的各组参数创建optimizer和lr

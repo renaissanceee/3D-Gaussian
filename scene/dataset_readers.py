@@ -93,7 +93,18 @@ def readColmapCameras(cam_extrinsics, cam_intrinsics, images_folder):
             FovX = focal2fov(focal_length_x, width)
         else:
             assert False, "Colmap camera model not handled: only undistorted datasets (PINHOLE or SIMPLE_PINHOLE cameras) supported!"
-
+        # print(images_folder)#C:\bsd\gaussian-splatting\dataset\tandt_db\tandt\train_LR\images
+            
+        # gt -> HR_gt
+        # if "train_low_" in images_folder:
+        #     if "/" in images_folder:
+        #         parts=images_folder.split("/")
+        #         parts[-2] = "train"
+        #         images_folder= '/'.join(parts)
+        #     if "\\" in images_folder:
+        #         parts=images_folder.split("\\")
+        #         parts[-2] = "train"
+        #         images_folder= '\\'.join(parts)            
         image_path = os.path.join(images_folder, os.path.basename(extr.name))
         image_name = os.path.basename(image_path).split(".")[0]
         image = Image.open(image_path)
@@ -140,10 +151,13 @@ def readColmapSceneInfo(path, images, eval, llffhold=8):
         cameras_intrinsic_file = os.path.join(path, "sparse/0", "cameras.txt")
         cam_extrinsics = read_extrinsics_text(cameras_extrinsic_file)
         cam_intrinsics = read_intrinsics_text(cameras_intrinsic_file)
+    
      # 读取每张图片：外参->RT 内参->FoV
     reading_dir = "images" if images == None else images
     cam_infos_unsorted = readColmapCameras(cam_extrinsics=cam_extrinsics, cam_intrinsics=cam_intrinsics, images_folder=os.path.join(path, reading_dir))
-    cam_infos = sorted(cam_infos_unsorted.copy(), key = lambda x : x.image_name)
+    cam_infos = sorted(cam_infos_unsorted.copy(), key = lambda x : x.image_name)# sort by image_name
+    # images(q,t,..) -> CameraInfo(R,T,FovY,FovX,..)
+
     # split划分
     if eval:
         train_cam_infos = [c for idx, c in enumerate(cam_infos) if idx % llffhold != 0]
