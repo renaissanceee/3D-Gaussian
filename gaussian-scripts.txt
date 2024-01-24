@@ -1,0 +1,16 @@
+
+--------1.提取相机信息----------
+python convert.py -s ./dataset/tandt_db/tandt/train_low_3/ --colmap_executable C:\Users\JIAMELI\Downloads\COLMAP-3.8-windows-cuda\COLMAP-3.8-windows-cuda\COLMAP.bat
+
+--------2.训练----------
+python train.py -s ./dataset/tandt_db/tandt/train_low_3/ --eval
+
+--------3.render到指定HR----------
+python render.py -m ./output/283e1f3f-8
+python metrics.py -m ./output/283e1f3f-8
+# 在gaussian_render里面改H,W为高清
+--------------------------------
+ptyhon read_ply.py
+# 读取点数
+ptyhon LR.py
+# 生成低清数据集
