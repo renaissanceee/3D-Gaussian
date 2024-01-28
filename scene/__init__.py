@@ -40,13 +40,7 @@ class Scene:
         self.train_cameras = {}
         self.test_cameras = {}
         # 从Colmap/Blender读取图片 相机参数
-        # path=args.source_path
-        print(args.source_path)
-        path=args.source_path
-        path=path.replace("4","2")
-        args.source_path=path
-        print(args.source_path)
-
+        print(os.path.join(args.source_path, "sparse"))
         if os.path.exists(os.path.join(args.source_path, "sparse")):
             scene_info = sceneLoadTypeCallbacks["Colmap"](args.source_path, args.images, args.eval)
         elif os.path.exists(os.path.join(args.source_path, "transforms_train.json")):
