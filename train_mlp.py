@@ -31,7 +31,7 @@ try:
 except ImportError:
     TENSORBOARD_FOUND = False
 
-def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoint_iterations, checkpoint, debug_from,render_H,render_W):
+def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoint_iterations, checkpoint, debug_from, render_H, render_W):
     first_iter = 0
     tb_writer = prepare_output_and_logger(dataset)
     # print("dataset:", vars(dataset))
@@ -41,7 +41,11 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
 
 
     gaussians = GaussianModel(dataset.sh_degree)# 3 
+    # print(vars(dataset))
+    #{'sh_degree': 3, 'source_path': './train_low_4', 'model_path': './output/6b06499e-9', 'images': 'images', 'resolution': -1, 
+    #'white_background': False, 'data_device': 'cuda', 'eval': True}
     scene = Scene(dataset, gaussians)
+    gaussians.projection()
     gaussians.training_setup(opt)
     if checkpoint:
         (model_params, first_iter) = torch.load(checkpoint)
@@ -60,6 +64,8 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
     start_time=time.time()
     logging.basicConfig(filename = scene.model_path+'/log.txt',level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
     logging.info("Training started.")
+    opt.iterations = 60_000
+    print("first_iter, opt.iterations:",first_iter, opt.iterations)
     for iteration in range(first_iter, opt.iterations + 1):      # 3000 iters  
         if network_gui.conn == None:
             network_gui.try_connect()
@@ -127,6 +133,8 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                 scene.save(iteration)
 
             # Densification
+            ## Todo
+            opt.densify_until_iter=40_000
             if iteration < opt.densify_until_iter:# 15000
                 # Keep track of max radii in image-space for pruning
                 gaussians.max_radii2D[visibility_filter] = torch.max(gaussians.max_radii2D[visibility_filter], radii[visibility_filter])
@@ -143,6 +151,12 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
             if iteration < opt.iterations:
                 gaussians.optimizer.step()
                 gaussians.optimizer.zero_grad(set_to_none = True)
+
+            # add more points  
+            # if (iteration in saving_iterations):
+            #     print("\n[ITER {}] Add more Gaussians".format(iteration))
+            #     print(vars(gaussians))
+            #     asd
                 
             if (iteration in checkpoint_iterations):
                 print("\n[ITER {}] Saving Checkpoint".format(iteration))
@@ -228,9 +242,15 @@ if __name__ == "__main__":
     parser.add_argument("--save_iterations", nargs="+", type=int, default=[7_000, 30_000])
     parser.add_argument("--quiet", action="store_true")
     parser.add_argument("--checkpoint_iterations", nargs="+", type=int, default=[30_000])
-    parser.add_argument("--start_checkpoint", type=str, default = None)
-    parser.add_argument("--render_H", type=int, default=None)
-    parser.add_argument("--render_W", type=int, default=None)
+    parser.add_argument("--render_H", type=int, default=800)
+    parser.add_argument("--render_W", type=int, default=800)
+    # start from ckpt
+    # parser.add_argument("--start_checkpoint", type=str, default = None)
+    # parser.add_argument("--test_iterations", nargs="+", type=int, default=[40_000, 60_000])
+    # parser.add_argument("--save_iterations", nargs="+", type=int, default=[40_000, 60_000])
+    # parser.add_argument("--checkpoint_iterations", nargs="+", type=int, default=[60_000])
+
+
     args = parser.parse_args(sys.argv[1:])
     args.save_iterations.append(args.iterations)
     

@@ -40,6 +40,13 @@ class Scene:
         self.train_cameras = {}
         self.test_cameras = {}
         # 从Colmap/Blender读取图片 相机参数
+        # path=args.source_path
+        print(args.source_path)
+        path=args.source_path
+        path=path.replace("4","2")
+        args.source_path=path
+        print(args.source_path)
+
         if os.path.exists(os.path.join(args.source_path, "sparse")):
             scene_info = sceneLoadTypeCallbacks["Colmap"](args.source_path, args.images, args.eval)
         elif os.path.exists(os.path.join(args.source_path, "transforms_train.json")):
@@ -50,7 +57,11 @@ class Scene:
 
         # 把每张图片的相机参数dump到cameras.json
         if not self.loaded_iter:
+            # print(scene_info.ply_path)
+            # path=scene_info.ply_path
+            # path.replace("2","4")
             with open(scene_info.ply_path, 'rb') as src_file, open(os.path.join(self.model_path, "input.ply") , 'wb') as dest_file:
+            # with open(path, 'rb') as src_file, open(os.path.join(self.model_path, "input.ply") , 'wb') as dest_file:
                 dest_file.write(src_file.read())
             json_cams = []
             camlist = []
