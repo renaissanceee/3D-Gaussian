@@ -47,16 +47,15 @@ def render_set_HR_gt(model_path, name, iteration, views, gaussians, pipeline, ba
     makedirs(render_path, exist_ok=True)
     makedirs(gts_path, exist_ok=True)
 
-    # for idx, view in enumerate(tqdm(views, desc="Rendering progress")):
-    #     if render_W!=0:
-    #         view.image_width, view.image_height =  render_W,render_H
-    #     rendering = render(view, gaussians, pipeline, background)["render"]
-    #     torchvision.utils.save_image(rendering, os.path.join(render_path, '{0:05d}'.format(idx) + ".png"))
+    # render
+    for idx, view in enumerate(tqdm(views, desc="Rendering progress")):
+        if render_W!=0:
+            view.image_width, view.image_height =  render_W,render_H
+        rendering = render(view, gaussians, pipeline, background)["render"]
+        torchvision.utils.save_image(rendering, os.path.join(render_path, '{0:05d}'.format(idx) + ".png"))
 
-    # directly copy HR
-    # ./output/b1913ad2-1/train/ours_60000/gt -> change b1913ad2-1
+    # gt: copy HR
     source_path = os.path.join(save_HR_gt, name, "ours_" + str(iteration), "gt")
-
     for file_name in os.listdir(source_path):
         source_file_path = os.path.join(source_path, file_name)
         gts_file_path = os.path.join(gts_path, file_name)

@@ -1,16 +1,16 @@
-
 --------1.提取相机信息----------
-python convert.py -s ./dataset/tandt_db/tandt/train_low_3/ --colmap_executable C:\Users\JIAMELI\Downloads\COLMAP-3.8-windows-cuda\COLMAP-3.8-windows-cuda\COLMAP.bat
+python convert.py -s ../mip-splatting/mip-nerf360/360-v2/bicycle --colmap_executable ./COLMAP-3.8-windows-cuda/COLMAP.bat
 
 --------2.训练----------
-python train.py -s ./dataset/tandt_db/tandt/train_low_3/ --eval
+# single-stage
+python train.py -s ./tandt_db/tandt/train/ --eval -r 1 --model_path ./output/low_1_train
+# two-stage
+python train_two_stage.py -s ./tandt_db/tandt/train/ --eval -r 2 --model_path ./output/low_4_2_train --load_gaussian ./output/low_8_train/point_cloud/iteration_30000/point_cloud.ply
+# MLP
+python train_mlp.py -s ./tandt_db/tandt/train/ -r 2  --model_path ./output/mlp/low_2_train --eval
+# debug
+python train_gmm.py -s ./tandt_db/tandt/train/ -r 2 --model_path ./output/debug/ --eval
 
 --------3.render到指定HR----------
-python render.py -m ./output/283e1f3f-8
-python metrics.py -m ./output/283e1f3f-8
-# 在gaussian_render里面改H,W为高清
---------------------------------
-ptyhon read_ply.py
-# 读取点数
-ptyhon LR.py
-# 生成低清数据集
+python render.py -m ./output/low_8_train --render_W 980 --render_H 545 --save_HR_gt ./output/low_1_train/
+python metrics.py -m ./output/low_8_train

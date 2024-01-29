@@ -226,55 +226,19 @@ class GaussianModel:
         # fit 1 Gaussian-> 2 Gaussian (if gmm_degree=2)
         # mean,covariance-> double for fitting
         # features, opacity -> copy
-        import torch.distributions as D
-        from torch.distributions.multivariate_normal import MultivariateNormal
-        from torch.distributions.mixture_same_family import MixtureSameFamily
-
-
+        import torch.distributions as dist
         # 1.mean, covariance
-        mean_pre=self.get_xyz[0]
-        covariance_matrix_pre = self.get_covariance(scaling_modifier=1)[0] # s,q -> [182686, 6]
-        cov_matrix = torch.zeros((3, 3), dtype=torch.float)
-
-
-        # distr_pre = MultivariateNormal(mean_pre, covariance_matrix_pre)
-        # cov_matrix = covariance_matrix_pre.view(-1, 3, 2)
+        num_pre=self.get_xyz.shape[0]
+        num_after=num_pre//gmm_degree
+        mean_pre=self.get_xyz
+        covariance_matrix_pre = self.get_covariance(scaling_modifier=1).view(-1,3,2) # s,q -> [182686, 6]
+        ## 6->(3,3)
         cov_matrix[0, 1] = covariance_matrix_pre[0]
         cov_matrix[0, 2] = covariance_matrix_pre[1]
         cov_matrix[1, 2] = covariance_matrix_pre[2]
         cov_matrix[0, 0] = covariance_matrix_pre[3]
         cov_matrix[1, 1] = covariance_matrix_pre[4]
         cov_matrix[2, 2] = covariance_matrix_pre[5]
-        # Mirror the upper triangular part to complete the symmetric matrix
-        cov_matrix = cov_matrix + cov_matrix.T - torch.diag(cov_matrix.diag())
-
-
-        # Construct Gaussian Mixture Model in 3D consisting of 2 components
-        mix = D.Categorical(torch.ones(gmm_degree,))
-        # print(Normal(torch.randn(mean_pre.shape[0], gmm_degree, 3), torch.rand(mean_pre.shape[0], gmm_degree, 3)).shape)
-        comp = D.Independent(D.Normal(mean_pre, cov_matrix), 1)
-        gmm = MixtureSameFamily(mix, comp)
-        num_samples =1000
-        samples = gmm.sample([num_samples])
-
-        means = samples.mean(dim=0)  # Mean of the components
-        covariances = torch.cat(
-            [gmm.component_distribution.covariance_matrix.unsqueeze(0) for gmm in samples.components], dim=0)
-
-        print(means.size())
-        print(covariances.size())
-        # 2.Gaussian-fitting
-        # mean(center) ->concat
-        aaaaa
-        # mean_1 =
-        # mean_2 =
-        # self._xyz = concat(mean_1,mean_2)
-        # # covariance_matrix(s,q) -> assump same scaling
-        # L = build_scaling_rotation(scaling, rotation)
-        # actual_covariance = L @ L.transpose(1, 2)
-
-
-
 
 
 
@@ -352,6 +316,8 @@ class GaussianModel:
                         np.asarray(plydata.elements[0]["y"]),
                         np.asarray(plydata.elements[0]["z"])),  axis=1)
         opacities = np.asarray(plydata.elements[0]["opacity"])[..., np.newaxis]
+        logging.info("Number of points at initialisation = {}".format(xyz.shape[0]))
+        print("Number of points at initialisation = {}".format(xyz.shape[0]))
 
         features_dc = np.zeros((xyz.shape[0], 3, 1))
         features_dc[:, 0, 0] = np.asarray(plydata.elements[0]["f_dc_0"])
@@ -385,6 +351,7 @@ class GaussianModel:
         self._opacity = nn.Parameter(torch.tensor(opacities, dtype=torch.float, device="cuda").requires_grad_(True))
         self._scaling = nn.Parameter(torch.tensor(scales, dtype=torch.float, device="cuda").requires_grad_(True))
         self._rotation = nn.Parameter(torch.tensor(rots, dtype=torch.float, device="cuda").requires_grad_(True))
+        self.max_radii2D = torch.zeros((self.get_xyz.shape[0]), device="cuda")  # (p,)
 
         self.active_sh_degree = self.max_sh_degree
 
