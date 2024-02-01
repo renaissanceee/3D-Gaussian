@@ -217,13 +217,14 @@ class GaussianModel:
         self.mlp_opacity = nn.Linear(1, 2).to("cuda")
         self.mlp_scales = nn.Linear(3, 6).to("cuda")
         self.mlp_rotations = nn.Linear(4, 8).to("cuda")
-        
-        self._xyz=self.mlp_xyz(self._xyz).detach().view(-1,3)
-        self._features_dc = self.mlp_features_dc(self._features_dc).detach().view(-1, 1, 3)
-        self._features_rest = self.mlp_features_rest(self._features_rest).detach().view(-1,15,3)
-        self._opacity = self.mlp_opacity(self._opacity).detach().view(-1,1)
-        self._scaling = self.mlp_scales(self._scaling).detach().view(-1,3)
-        self._rotation = self.mlp_rotations(self._rotation).detach().view(-1,4)
+
+
+        self._xyz=self.mlp_xyz(self._xyz).view(-1,3)
+        self._features_dc = self.mlp_features_dc(self._features_dc).view(-1, 1, 3)
+        self._features_rest = self.mlp_features_rest(self._features_rest).view(-1,15,3)
+        self._opacity = self.mlp_opacity(self._opacity).view(-1,1)
+        self._scaling = self.mlp_scales(self._scaling).view(-1,3)
+        self._rotation = self.mlp_rotations(self._rotation).view(-1,4)
         self.max_radii2D = torch.zeros((self._xyz.shape[0]), device="cuda")
 
         # print(self._xyz.size())#[29495, 3]->[58990, 3]
@@ -478,13 +479,13 @@ class GaussianModel:
     def densify_and_prune(self, max_grad, min_opacity, extent, max_screen_size):
         grads = self.xyz_gradient_accum / self.denom # 均值的累积梯度
         grads[grads.isnan()] = 0.0
-
+        "----------------1.densify----------------"
         self.densify_and_clone(grads, max_grad, extent) # 均值grad超出 scale不足
         self.densify_and_split(grads, max_grad, extent) # 均值grad超出 scale超出
-
+        "----------------2.prune----------------"
         prune_mask = (self.get_opacity < min_opacity).squeeze() # opacity小于阈值
         if max_screen_size:
-            big_points_vs = self.max_radii2D > max_screen_size # 2D半径超出
+            big_points_vs = self.max_radii2D > max_screen_size # 2D半径超出  # None->20
             big_points_ws = self.get_scaling.max(dim=1).values > 0.1 * extent # 尺度超出
             prune_mask = torch.logical_or(torch.logical_or(prune_mask, big_points_vs), big_points_ws)
         self.prune_points(prune_mask) # del

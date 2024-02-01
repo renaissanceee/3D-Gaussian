@@ -44,6 +44,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
     #           'white_background': False, 'data_device': 'cuda', 'eval': False}
 
     gaussians = GaussianModel(dataset.sh_degree)  # 3 
+    # gaussians.projection() # MLP
     scene = Scene(dataset, gaussians,load_gaussian=load_gaussian)
     gaussians.training_setup(opt)
     if checkpoint:
@@ -88,6 +89,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         # Every 1000 its we increase the levels of SH up to a maximum degree
         if iteration % 1000 == 0:
             gaussians.oneupSHdegree()
+            # print("max_radii2D:",torch.max(gaussians.max_radii2D))# number increasing
 
         # Pick a random Camera
         if not viewpoint_stack:
@@ -134,14 +136,16 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                 scene.save(iteration)
 
             # Densification
-            if iteration < opt.densify_until_iter:  # 15000
+            if iteration < opt.densify_until_iter:  # 15_000
                 # Keep track of max radii in image-space for pruning
                 gaussians.max_radii2D[visibility_filter] = torch.max(gaussians.max_radii2D[visibility_filter],
                                                                      radii[visibility_filter])
                 gaussians.add_densification_stats(viewspace_point_tensor, visibility_filter)
 
                 if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0:  # iter>500, every 100 iters
-                    size_threshold = 20 if iteration > opt.opacity_reset_interval else None
+                    size_threshold = 20 if iteration > opt.opacity_reset_interval else None# None until 3000 iter -> 设大一点
+                    # print(opt.densify_grad_threshold)# 0.0002 ->设小一点(for clone/split)
+                    # print(scene.cameras_extent)# 7.45
                     gaussians.densify_and_prune(opt.densify_grad_threshold, 0.005, scene.cameras_extent, size_threshold)
 
                 if iteration % opt.opacity_reset_interval == 0 or (
