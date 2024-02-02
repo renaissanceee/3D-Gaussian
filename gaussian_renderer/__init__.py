@@ -10,13 +10,16 @@
 #
 
 import torch
+from torch.distributions import constraints
 import torch.nn as nn
 import math
+import numpy as np
 from diff_gaussian_rasterization import GaussianRasterizationSettings, GaussianRasterizer
 from scene.gaussian_model import GaussianModel
 from utils.sh_utils import eval_sh
 
-def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, scaling_modifier = 1.0, override_color = None):
+
+def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, scaling_modifier = 1.0, override_color = None, cov3D_gmm=None):
     """
     Render the scene. 
     
@@ -54,14 +57,16 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
     means3D = pc.get_xyz
     means2D = screenspace_points
     opacity = pc.get_opacity
-
+    
     # If precomputed 3d covariance is provided, use it. If not, then it will be computed from
     # scaling / rotation by the rasterizer.
     scales = None
     rotations = None
     cov3D_precomp = None
+    pipe.compute_cov3D_python = True
     if pipe.compute_cov3D_python:
-        cov3D_precomp = pc.get_covariance(scaling_modifier)
+        # cov3D_precomp = pc.get_covariance(scaling_modifier)
+        cov3D_precomp = cov3D_gmm
     else:
         scales = pc.get_scaling
         rotations = pc.get_rotation
