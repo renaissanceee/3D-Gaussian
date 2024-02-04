@@ -34,7 +34,7 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
         pass
 
     # Set up rasterization configuration
-    tanfovx = math.tan(viewpoint_camera.FoVx * 0.5)# 水平视角一半的正切
+    tanfovx = math.tan(viewpoint_camera.FoVx * 0.5)# 水平视角一半的正切 -> H/2f
     tanfovy = math.tan(viewpoint_camera.FoVy * 0.5)
 
     raster_settings = GaussianRasterizationSettings(
@@ -63,7 +63,7 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
     scales = None
     rotations = None
     cov3D_precomp = None
-    pipe.compute_cov3D_python = True
+    # pipe.compute_cov3D_python = True
     if pipe.compute_cov3D_python:
         # cov3D_precomp = pc.get_covariance(scaling_modifier)
         cov3D_precomp = cov3D_gmm

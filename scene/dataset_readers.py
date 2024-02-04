@@ -93,25 +93,27 @@ def readColmapCameras(cam_extrinsics, cam_intrinsics, images_folder):
             FovX = focal2fov(focal_length_x, width)
         else:
             assert False, "Colmap camera model not handled: only undistorted datasets (PINHOLE or SIMPLE_PINHOLE cameras) supported!"
-        # print(images_folder)#C:\bsd\gaussian-splatting\dataset\tandt_db\tandt\train_LR\images
-            
-        # gt -> HR_gt
-        # if "train_low_" in images_folder:
-        #     if "/" in images_folder:
-        #         parts=images_folder.split("/")
-        #         parts[-2] = "train"
-        #         images_folder= '/'.join(parts)
-        #     if "\\" in images_folder:
-        #         parts=images_folder.split("\\")
-        #         parts[-2] = "train"
-        #         images_folder= '\\'.join(parts)            
+
+        # images_folder = "./output/low_1_train/images_gt_resize/"
+        # images_folder = "./tandt_db/tandt/train/images_2/"
         image_path = os.path.join(images_folder, os.path.basename(extr.name))
         image_name = os.path.basename(image_path).split(".")[0]
-        image = Image.open(image_path)
-
-        cam_info = CameraInfo(uid=uid, R=R, T=T, FovY=FovY, FovX=FovX, image=image,
-                              image_path=image_path, image_name=image_name, width=width, height=height)
-        cam_infos.append(cam_info)
+        # image = Image.open(image_path)
+        # cam_info = CameraInfo(uid=uid, R=R, T=T, FovY=FovY, FovX=FovX, image=image,
+        #                       image_path=image_path, image_name=image_name, width=width, height=height)
+        # cam_infos.append(cam_info)
+        
+        # only test-set for training(second-stage)
+        if int(image_name)>=264:
+            image = Image.open(image_path)
+            cam_info = CameraInfo(uid=uid, R=R, T=T, FovY=FovY, FovX=FovX, image=image,
+                                  image_path=image_path, image_name=image_name, width=width, height=height)
+            cam_infos.append(cam_info)
+        # if int(image_name)<264:
+        #     image = Image.open(image_path)
+        #     cam_info = CameraInfo(uid=uid, R=R, T=T, FovY=FovY, FovX=FovX, image=image,
+        #                           image_path=image_path, image_name=image_name, width=width, height=height)
+        #     cam_infos.append(cam_info)
     sys.stdout.write('\n')
     return cam_infos
 

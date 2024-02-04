@@ -91,7 +91,64 @@ def evaluate(model_paths):
                 json.dump(per_view_dict[scene_dir], fp, indent=True)
         except:
             print("Unable to compute metrics for model", scene_dir)
+def evaluate_train(model_paths):
 
+    full_dict = {}
+    per_view_dict = {}
+    full_dict_polytopeonly = {}
+    per_view_dict_polytopeonly = {}
+    print("")
+
+    for scene_dir in model_paths:
+        try:
+            print("Scene:", scene_dir)
+            full_dict[scene_dir] = {}
+            per_view_dict[scene_dir] = {}
+            full_dict_polytopeonly[scene_dir] = {}
+            per_view_dict_polytopeonly[scene_dir] = {}
+
+            train_dir = Path(scene_dir) / "train"
+
+            for method in os.listdir(train_dir):
+                print("Method:", method)
+
+                full_dict[scene_dir][method] = {}
+                per_view_dict[scene_dir][method] = {}
+                full_dict_polytopeonly[scene_dir][method] = {}
+                per_view_dict_polytopeonly[scene_dir][method] = {}
+
+                method_dir = train_dir / method
+                gt_dir = method_dir/ "gt"
+                renders_dir = method_dir / "renders"
+                renders, gts, image_names = readImages(renders_dir, gt_dir)
+
+                ssims = []
+                psnrs = []
+                lpipss = []
+
+                for idx in tqdm(range(len(renders)), desc="Metric evaluation progress"):
+                    ssims.append(ssim(renders[idx], gts[idx]))
+                    psnrs.append(psnr(renders[idx], gts[idx]))
+                    lpipss.append(lpips(renders[idx], gts[idx], net_type='vgg'))
+
+                print("  SSIM : {:>12.7f}".format(torch.tensor(ssims).mean(), ".5"))
+                print("  PSNR : {:>12.7f}".format(torch.tensor(psnrs).mean(), ".5"))
+                print("  LPIPS: {:>12.7f}".format(torch.tensor(lpipss).mean(), ".5"))
+                print("")
+
+                full_dict[scene_dir][method].update({"SSIM": torch.tensor(ssims).mean().item(),
+                                                        "PSNR": torch.tensor(psnrs).mean().item(),
+                                                        "LPIPS": torch.tensor(lpipss).mean().item()})
+                per_view_dict[scene_dir][method].update({"SSIM": {name: ssim for ssim, name in zip(torch.tensor(ssims).tolist(), image_names)},
+                                                            "PSNR": {name: psnr for psnr, name in zip(torch.tensor(psnrs).tolist(), image_names)},
+                                                            "LPIPS": {name: lp for lp, name in zip(torch.tensor(lpipss).tolist(), image_names)}})
+
+            with open(scene_dir + "/results_train.json", 'w') as fp:
+                json.dump(full_dict[scene_dir], fp, indent=True)
+            with open(scene_dir + "/per_view_train.json", 'w') as fp:
+                json.dump(per_view_dict[scene_dir], fp, indent=True)
+        except:
+            print("Unable to compute metrics for model", scene_dir)
 if __name__ == "__main__":
     device = torch.device("cuda:0")
     torch.cuda.set_device(device)
@@ -101,3 +158,4 @@ if __name__ == "__main__":
     parser.add_argument('--model_paths', '-m', required=True, nargs="+", type=str, default=[])
     args = parser.parse_args()
     evaluate(args.model_paths)
+    evaluate_train(args.model_paths)

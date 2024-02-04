@@ -21,7 +21,8 @@ from argparse import ArgumentParser
 from arguments import ModelParams, PipelineParams, get_combined_args
 from gaussian_renderer import GaussianModel
 from shutil import copyfile
-
+from PIL import Image
+from torchvision import transforms
 
 def render_set(model_path, name, iteration, views, gaussians, pipeline, background, render_H, render_W):
     render_path = os.path.join(model_path, name, "ours_{}".format(iteration), "renders")
@@ -34,9 +35,13 @@ def render_set(model_path, name, iteration, views, gaussians, pipeline, backgrou
         if render_W != 0:
             view.image_width, view.image_height = render_W, render_H
         rendering = render(view, gaussians, pipeline, background)["render"]
-        gt = view.original_image[0:3, :, :]
-        torchvision.utils.save_image(rendering, os.path.join(render_path, '{0:05d}'.format(idx) + ".png"))
-        torchvision.utils.save_image(gt, os.path.join(gts_path, '{0:05d}'.format(idx) + ".png"))
+        torchvision.utils.save_image(rendering, os.path.join(render_path, view.image_name + ".png"))
+        # gt = view.original_image[0:3, :, :]
+        gt_path = "./tandt_db/tandt/train/images_4/"+view.image_name + ".jpg"
+        gt=Image.open(gt_path)
+        transform = transforms.ToTensor()
+        gt = transform(gt)
+        torchvision.utils.save_image(gt, os.path.join(gts_path, view.image_name + ".png"))
 
 
 def render_set_HR_gt(model_path, name, iteration, views, gaussians, pipeline, background, render_H, render_W,
@@ -51,8 +56,11 @@ def render_set_HR_gt(model_path, name, iteration, views, gaussians, pipeline, ba
     for idx, view in enumerate(tqdm(views, desc="Rendering progress")):
         if render_W!=0:
             view.image_width, view.image_height =  render_W,render_H
+        # # zoom-out
+        # view.FoVx *=2
+        # view.FoVy *= 2
         rendering = render(view, gaussians, pipeline, background)["render"]
-        torchvision.utils.save_image(rendering, os.path.join(render_path, '{0:05d}'.format(idx) + ".png"))
+        torchvision.utils.save_image(rendering, os.path.join(render_path, view.image_name + ".png"))
 
     # gt: copy HR
     source_path = os.path.join(save_HR_gt, name, "ours_" + str(iteration), "gt")
