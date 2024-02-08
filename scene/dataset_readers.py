@@ -94,8 +94,6 @@ def readColmapCameras(cam_extrinsics, cam_intrinsics, images_folder):
         else:
             assert False, "Colmap camera model not handled: only undistorted datasets (PINHOLE or SIMPLE_PINHOLE cameras) supported!"
 
-        # images_folder = "./output/low_1_train/images_gt_resize/"
-        # images_folder = "./tandt_db/tandt/train/images_2/"
         image_path = os.path.join(images_folder, os.path.basename(extr.name))
         image_name = os.path.basename(image_path).split(".")[0]
         # image = Image.open(image_path)
@@ -104,16 +102,12 @@ def readColmapCameras(cam_extrinsics, cam_intrinsics, images_folder):
         # cam_infos.append(cam_info)
         
         # only test-set for training(second-stage)
-        if int(image_name)>=264:
+        if os.path.exists(image_path):
             image = Image.open(image_path)
             cam_info = CameraInfo(uid=uid, R=R, T=T, FovY=FovY, FovX=FovX, image=image,
                                   image_path=image_path, image_name=image_name, width=width, height=height)
             cam_infos.append(cam_info)
-        # if int(image_name)<264:
-        #     image = Image.open(image_path)
-        #     cam_info = CameraInfo(uid=uid, R=R, T=T, FovY=FovY, FovX=FovX, image=image,
-        #                           image_path=image_path, image_name=image_name, width=width, height=height)
-        #     cam_infos.append(cam_info)
+
     sys.stdout.write('\n')
     return cam_infos
 
@@ -153,7 +147,10 @@ def readColmapSceneInfo(path, images, eval, llffhold=8):
         cameras_intrinsic_file = os.path.join(path, "sparse/0", "cameras.txt")
         cam_extrinsics = read_extrinsics_text(cameras_extrinsic_file)
         cam_intrinsics = read_intrinsics_text(cameras_intrinsic_file)
-    
+    # print(vars(cam_extrinsics))
+    # print("===========")
+    # print(vars(cam_intrinsics))
+    # asd
      # 读取每张图片：外参->RT 内参->FoV
     reading_dir = "images" if images == None else images
     cam_infos_unsorted = readColmapCameras(cam_extrinsics=cam_extrinsics, cam_intrinsics=cam_intrinsics, images_folder=os.path.join(path, reading_dir))

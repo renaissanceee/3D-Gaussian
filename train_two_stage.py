@@ -89,7 +89,10 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         # Every 1000 its we increase the levels of SH up to a maximum degree
         if iteration % 1000 == 0:
             gaussians.oneupSHdegree()
-            # print("max_radii2D:",torch.max(gaussians.max_radii2D))# number increasing
+            # 记录显存使用情况
+            # memory_stats = torch.cuda.memory_stats()
+            # with open(scene.model_path +"memory_usage.log", "a") as log_file:
+            #     log_file.write(f"{memory_stats}\n")
 
         # Pick a random Camera
         if not viewpoint_stack:
@@ -102,14 +105,14 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
             pipe.debug = True
 
         bg = torch.rand((3), device="cuda") if opt.random_background else background
-        if render_W is not None:
-            viewpoint_cam.image_width, viewpoint_cam.image_height = render_W, render_H
+        # if render_W is not None:
+        #     viewpoint_cam.image_width, viewpoint_cam.image_height = render_W, render_H
 
         render_pkg = render(viewpoint_cam, gaussians, pipe, bg)
         image, viewspace_point_tensor, visibility_filter, radii = render_pkg["render"], render_pkg["viewspace_points"], \
         render_pkg["visibility_filter"], render_pkg["radii"]
         # print(image.size())# [3, 545, 980]
-
+        # print(viewpoint_cam.image_width, viewpoint_cam.image_height)
         # Loss
         gt_image = viewpoint_cam.original_image.cuda()  # [3, 545, 980]
         Ll1 = l1_loss(image, gt_image)
@@ -138,6 +141,12 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
             # Densification
             if iteration < opt.densify_until_iter:  # 15_000
                 # Keep track of max radii in image-space for pruning
+                #############
+                # print(visibility_filter.size())
+                # print(gaussians.max_radii2D) #empty
+                # print(radii.size())
+                # print("after", gaussians.max_radii2D[visibility_filter])
+                #############
                 gaussians.max_radii2D[visibility_filter] = torch.max(gaussians.max_radii2D[visibility_filter],
                                                                      radii[visibility_filter])
                 gaussians.add_densification_stats(viewspace_point_tensor, visibility_filter)
@@ -242,7 +251,7 @@ if __name__ == "__main__":
     op = OptimizationParams(parser)
     pp = PipelineParams(parser)
     parser.add_argument('--ip', type=str, default="127.0.0.1")
-    parser.add_argument('--port', type=int, default=6009)
+    parser.add_argument('--port', type=int, default=3009)
     parser.add_argument('--debug_from', type=int, default=-1)
     parser.add_argument('--detect_anomaly', action='store_true', default=False)
     parser.add_argument("--test_iterations", nargs="+", type=int, default=[7_000, 30_000])
