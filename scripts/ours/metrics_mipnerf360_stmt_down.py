@@ -7,7 +7,7 @@ import queue
 import time
 
 scenes = ["bicycle", "bonsai", "counter", "garden", "stump", "kitchen", "room"]
-factors = [8, 8, 8, 8, 8, 8, 8]
+factors = [1, 1, 1, 1, 1, 1, 1]
 
 
 excluded_gpus = set([])
@@ -21,7 +21,9 @@ jobs = list(zip(scenes, factors))
 
 def train_scene(gpu, scene, factor):
     for scale in [8, 4, 2, 1]:
-        cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python metrics.py -m {output_dir}/{scene} -r {scale}"
+        model_path = os.path.join(output_dir,scene,"resize_x"+str(scale))
+        # model_path = os.path.join(output_dir, scene)
+        cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python metrics.py -m {model_path} -r {scale}"
         print(cmd)
         if not dry_run:
             os.system(cmd)

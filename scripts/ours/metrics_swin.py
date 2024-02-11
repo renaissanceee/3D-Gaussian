@@ -7,12 +7,11 @@ import queue
 import time
 
 scenes = ["bicycle", "bonsai", "counter", "garden", "stump", "kitchen", "room"]
-factors = [1, 1, 1, 1, 1, 1, 1]
-
+factors = [8, 8, 8, 8, 8, 8, 8]
 
 excluded_gpus = set([])
 
-output_dir = "benchmark_360v2_stmt_down"
+output_dir = "360v2_ours_stmt_swin"
 
 dry_run = False
 
@@ -20,13 +19,10 @@ jobs = list(zip(scenes, factors))
 
 
 def train_scene(gpu, scene, factor):
-    cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python train.py -s /cluster/work/cvl/jiezcao/jiameng/3D-Gaussian/360_v2/{scene} -m {output_dir}/{scene} --eval -r {factor} --port {6009 + int(gpu)}"
-    print(cmd)
-    if not dry_run:
-        os.system(cmd)
-
     for scale in [8, 4, 2, 1]:
-        cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python render.py -m {output_dir}/{scene} -r {scale} --data_device cpu --skip_train"
+        model_path = os.path.join(output_dir,scene,"swin_x"+str(scale))
+        # model_path = os.path.join(output_dir, scene)
+        cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python metrics.py -m {model_path} -r {scale}"
         print(cmd)
         if not dry_run:
             os.system(cmd)
@@ -77,4 +73,3 @@ def dispatch_jobs(jobs, executor):
 # Using ThreadPoolExecutor to manage the thread pool
 with ThreadPoolExecutor(max_workers=8) as executor:
     dispatch_jobs(jobs, executor)
-

@@ -7,12 +7,11 @@ import queue
 import time
 
 scenes = ["bicycle", "bonsai", "counter", "garden", "stump", "kitchen", "room"]
-factors = [1, 1, 1, 1, 1, 1, 1]
-
+factors = [8, 8, 8, 8, 8, 8, 8]
 
 excluded_gpus = set([])
 
-output_dir = "benchmark_360v2_stmt_down"
+output_dir = "360v2_ours_stmt_swin"
 
 dry_run = False
 
@@ -20,13 +19,13 @@ jobs = list(zip(scenes, factors))
 
 
 def train_scene(gpu, scene, factor):
-    cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python train.py -s /cluster/work/cvl/jiezcao/jiameng/3D-Gaussian/360_v2/{scene} -m {output_dir}/{scene} --eval -r {factor} --port {6009 + int(gpu)}"
-    print(cmd)
-    if not dry_run:
-        os.system(cmd)
-
+    get_folder = "/cluster/work/cvl/jiezcao/jiameng/3D-Gaussian_slurm/benchmark_360v2_stmt/"
+    trained_gaussian = os.path.join(get_folder, scene, "point_cloud/iteration_30000/point_cloud.ply")
     for scale in [8, 4, 2, 1]:
-        cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python render.py -m {output_dir}/{scene} -r {scale} --data_device cpu --skip_train"
+        pseudo_gt = os.path.join(get_folder, scene, "pseudo_gt/swin_x" + str(scale))
+        model_path = os.path.join(output_dir, scene, "swin_x" + str(scale))
+
+        cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python render_ours_swin.py -m {model_path} -r 1 --skip_train --scale {scale}"
         print(cmd)
         if not dry_run:
             os.system(cmd)
@@ -44,7 +43,7 @@ def worker(gpu, scene, factor):
 def dispatch_jobs(jobs, executor):
     future_to_job = {}
     reserved_gpus = set()  # GPUs that are slated for work but may not be active yet
-
+    print(jobs)
     while jobs or future_to_job:
         # Get the list of available GPUs, not including those that are reserved.
         all_available_gpus = set(GPUtil.getAvailable(order="first", limit=10, maxMemory=0.1))
@@ -66,7 +65,7 @@ def dispatch_jobs(jobs, executor):
             job = future_to_job.pop(future)  # Remove the job associated with the completed future
             gpu = job[0]  # The GPU is the first element in each job tuple
             reserved_gpus.discard(gpu)  # Release this GPU
-            print(f"Job {job} has finished., rellasing GPU {gpu}")
+            print(f"Job {job} has finished., releasing GPU {gpu}")
         # (Optional) You might want to introduce a small delay here to prevent this loop from spinning very fast
         # when there are no GPUs available.
         time.sleep(5)
