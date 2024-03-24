@@ -6,12 +6,13 @@ from concurrent.futures import ThreadPoolExecutor
 import queue
 import time
 
-scenes = ["bicycle", "bonsai", "counter", "garden", "stump", "kitchen", "room"]
-factors = [8, 8, 8, 8, 8, 8, 8]
+scenes = ["ship", "drums", "ficus", "hotdog", "lego", "materials", "mic", "chair"]
+
+factors = [1] * len(scenes)
 
 excluded_gpus = set([])
 
-output_dir = "360v2_ours_stmt_swin_x16"
+output_dir = "/cluster/scratch/jiezcao/jiameng/3dgs/nerf_synthetic_ours_stmt"
 
 dry_run = False
 
@@ -20,7 +21,7 @@ jobs = list(zip(scenes, factors))
 
 def train_scene(gpu, scene, factor):
     for scale in [8, 4, 2]:
-        model_path = os.path.join(output_dir,scene,"swin_x"+str(scale))
+        model_path = os.path.join(output_dir,scene,"resize_x"+str(scale))
         # model_path = os.path.join(output_dir, scene)
         cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python metrics.py -m {model_path} -r {scale}"
         print(cmd)

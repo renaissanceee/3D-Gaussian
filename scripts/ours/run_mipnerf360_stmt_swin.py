@@ -6,12 +6,13 @@ from concurrent.futures import ThreadPoolExecutor
 import queue
 import time
 
-scenes = ["bicycle", "bonsai", "counter", "garden", "stump", "kitchen", "room"]
-factors = [8, 8, 8, 8, 8, 8, 8]
+scenes = ["bicycle","bonsai", "counter", "garden", "stump", "kitchen", "room","flowers","treehill"]
+factors = [8, 8, 8, 8, 8, 8, 8, 8, 8]
+
 
 excluded_gpus = set([])
 
-output_dir = "360v2_ours_stmt_swin"
+output_dir = "360v2_ours_stmt_swin_x16"
 
 dry_run = False
 
@@ -19,21 +20,32 @@ jobs = list(zip(scenes, factors))
 
 
 def train_scene(gpu, scene, factor):
-    get_folder = "/cluster/work/cvl/jiezcao/jiameng/3D-Gaussian_slurm/benchmark_360v2_stmt/"
+    get_folder = "/cluster/work/cvl/jiezcao/jiameng/3D-Gaussian_new/benchmark_360v2_stmt/"
     trained_gaussian = os.path.join(get_folder, scene, "point_cloud/iteration_30000/point_cloud.ply")
-    for scale in [8, 4, 2, 1]:
+    for scale in [8, 4, 2]:
         pseudo_gt = os.path.join(get_folder, scene, "pseudo_gt/swin_x" + str(scale))
         model_path = os.path.join(output_dir, scene, "swin_x" + str(scale))
-        cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python train_two_stage.py -s {pseudo_gt} -m {model_path} -r 1 --port {2000 + int(gpu)} --load_gaussian {trained_gaussian}"
+        cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python train_two_stage.py -s {pseudo_gt} -m {model_path} -r 1 --port {2005 + int(gpu)} --load_gaussian {trained_gaussian}"
         print(cmd)
         if not dry_run:
             os.system(cmd)
 
-        cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python render_ours_swin.py -m {model_path} -r 1 --data_device cpu --skip_train --scale {scale}"
+        cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python render_ours_swin.py -m {model_path} --scale {scale} -r 1 --data_device cpu --skip_train --iteration 1000"
         print(cmd)
         if not dry_run:
             os.system(cmd)
-
+        cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python render_ours_swin.py -m {model_path} --scale {scale} -r 1 --data_device cpu --skip_train --iteration 2000"
+        print(cmd)
+        if not dry_run:
+            os.system(cmd)
+        cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python render_ours_swin.py -m {model_path} --scale {scale} -r 1 --data_device cpu --skip_train --iteration 3000"
+        print(cmd)
+        if not dry_run:
+            os.system(cmd)
+        cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python render_ours_swin.py -m {model_path} --scale {scale} -r 1 --data_device cpu --skip_train --iteration 7000"
+        print(cmd)
+        if not dry_run:
+            os.system(cmd)
     return True
 
 

@@ -11,7 +11,7 @@ factors = [8, 8, 8, 8, 8, 8, 8]
 
 excluded_gpus = set([])
 
-output_dir = "360v2_ours_stmt_swin_x16"
+output_dir = "benchmark_360v2_stmt"
 
 dry_run = False
 
@@ -19,10 +19,37 @@ jobs = list(zip(scenes, factors))
 
 
 def train_scene(gpu, scene, factor):
-    for scale in [8, 4, 2]:
-        model_path = os.path.join(output_dir,scene,"swin_x"+str(scale))
-        # model_path = os.path.join(output_dir, scene)
-        cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python metrics.py -m {model_path} -r {scale}"
+    downsampl_rate=16
+    if scene == "bicycle":
+        scale=4946//downsampl_rate
+    if scene == "bonsai":
+        scale = 3118// downsampl_rate
+    if scene == "counter":
+        scale = 3115// downsampl_rate
+    if scene == "garden":
+        scale = 5187// downsampl_rate
+    if scene == "stump":
+        scale = 4978// downsampl_rate
+    if scene == "kitchen":
+        scale = 3115// downsampl_rate
+    if scene == "room":
+        scale = 3114// downsampl_rate
+    # train at x1/16
+    # cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python train.py -s /cluster/work/cvl/jiezcao/jiameng/3D-Gaussian/360_v2/{scene} -m {output_dir}/{scene} --eval -r {scale} --port {6001 + int(gpu)}"
+    # print(cmd)
+    # if not dry_run:
+    #     os.system(cmd)
+    # render at 1/16,1/8,1/4,1/2,1
+    for scaling in [scale, 8, 4, 2, 1]:
+        if scaling == scale:
+            scale_factor=downsampl_rate
+        else:
+            scale_factor =scaling
+        # cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python render.py -m {output_dir}/{scene} -r {scaling} --data_device cpu --skip_train --scale {scale_factor}"
+        # print(cmd)
+        # if not dry_run:
+        #     os.system(cmd)
+        cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python metrics.py -m {output_dir}/{scene} -r {scale_factor}"
         print(cmd)
         if not dry_run:
             os.system(cmd)

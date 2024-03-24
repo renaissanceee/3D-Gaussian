@@ -33,9 +33,8 @@ def render_set(model_path, name, iteration, views, gaussians, pipeline, backgrou
     root = parts[0].replace("360v2_ours", "benchmark_360v2")
     root = root.replace("_swin", "")
     scene = parts[1]
-    gt_folder = os.path.join(root, scene, name, "ours_{}".format(iteration), f"gt_{scale}")
-
-    print(gt_folder)
+    gt_folder = os.path.join(root, scene, name, "ours_30000", f"gt_{scale}")
+    gt_folder= gt_folder.replace("_x16","")
 
     makedirs(render_path, exist_ok=True)
     makedirs(gts_path, exist_ok=True)

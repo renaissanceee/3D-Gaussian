@@ -7,12 +7,13 @@ import queue
 import time
 
 scenes = ["bicycle", "bonsai", "counter", "garden", "stump", "kitchen", "room"]
-factors = [8, 8, 8, 8, 8, 8, 8]
+# factors = [8, 8, 8, 8, 8, 8, 8]
+factors = [309, 309, 309, 309, 309, 309, 309]
 
 
 excluded_gpus = set([])
 
-output_dir = "benchmark_360v2_stmt"
+output_dir = "benchmark_360v2_stmt_x16"
 
 dry_run = False
 
@@ -20,16 +21,16 @@ jobs = list(zip(scenes, factors))
 
 
 def train_scene(gpu, scene, factor):
-    cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python train.py -s /cluster/work/cvl/jiezcao/jiameng/3D-Gaussian/360_v2/{scene} -m {output_dir}/{scene} --eval -r {factor} --port {6009 + int(gpu)}"
+    cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python train.py -s /cluster/work/cvl/jiezcao/jiameng/3D-Gaussian/360_v2/{scene} -m {output_dir}/{scene} --eval -r {factor} --port {6001 + int(gpu)}"
     print(cmd)
     if not dry_run:
         os.system(cmd)
-
-    for scale in [8, 4, 2, 1]:
+    for scale in [309, 8, 4, 2, 1]:
         cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python render.py -m {output_dir}/{scene} -r {scale} --data_device cpu --skip_train"
         print(cmd)
         if not dry_run:
             os.system(cmd)
+
 
     return True
 

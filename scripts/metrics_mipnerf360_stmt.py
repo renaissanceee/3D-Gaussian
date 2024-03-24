@@ -6,12 +6,14 @@ from concurrent.futures import ThreadPoolExecutor
 import queue
 import time
 
-scenes = ["bicycle", "bonsai", "counter", "garden", "stump", "kitchen", "room"]
-factors = [8, 8, 8, 8, 8, 8, 8]
+# scenes = ["bicycle", "bonsai", "counter", "garden", "stump", "kitchen", "room"]
+# factors = [1, 1, 1, 1, 1, 1, 1]
+scenes = ["flowers", "treehill"]
+factors = [1, 1]
 
 excluded_gpus = set([])
 
-output_dir = "benchmark_360v2_stmt"
+output_dir = "benchmark_360v2_stmt_x8"
 
 dry_run = False
 
@@ -19,7 +21,7 @@ jobs = list(zip(scenes, factors))
 
 
 def train_scene(gpu, scene, factor):
-    for scale in [8, 4, 2, 1]:
+    for scale in [309, 8, 4, 2, 1]:
         cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python metrics.py -m {output_dir}/{scene} -r {scale}"
         print(cmd)
         if not dry_run:

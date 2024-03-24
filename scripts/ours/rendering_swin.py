@@ -5,13 +5,14 @@ import GPUtil
 from concurrent.futures import ThreadPoolExecutor
 import queue
 import time
+import math
 
-scenes = ["bicycle", "bonsai", "counter", "garden", "stump", "kitchen", "room"]
-factors = [8, 8, 8, 8, 8, 8, 8]
+scenes = ["ship", "drums", "ficus", "hotdog", "lego", "materials", "mic", "chair"]
+factors = [8] * len(scenes)
 
 excluded_gpus = set([])
 
-output_dir = "360v2_ours_stmt_swin"
+output_dir = "/cluster/scratch/jiezcao/jiameng/3dgs/nerf_synthetic_ours_stmt_downsampl"
 
 dry_run = False
 
@@ -19,17 +20,25 @@ jobs = list(zip(scenes, factors))
 
 
 def train_scene(gpu, scene, factor):
-    get_folder = "/cluster/work/cvl/jiezcao/jiameng/3D-Gaussian_slurm/benchmark_360v2_stmt/"
-    trained_gaussian = os.path.join(get_folder, scene, "point_cloud/iteration_30000/point_cloud.ply")
-    for scale in [8, 4, 2, 1]:
-        pseudo_gt = os.path.join(get_folder, scene, "pseudo_gt/swin_x" + str(scale))
-        model_path = os.path.join(output_dir, scene, "swin_x" + str(scale))
+    get_folder = "/cluster/scratch/jiezcao/jiameng/3dgs/benchmark_nerf_synthetic_stmt_up/"
+    trained_gaussian = os.path.join(get_folder, scene,
+                                    "point_cloud/iteration_30000/point_cloud.ply") 
+    for scale in [4, 2, 1]:
+        pseudo_gt = os.path.join(get_folder, scene, "pseudo_gt/resize_x8")
+        model_path = os.path.join(output_dir, scene, "resize_x" + str(scale))
 
-        cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python render_ours_swin.py -m {model_path} -r 1 --skip_train --scale {scale}"
+        cmd = f"python render_ours_downsampl.py -m {model_path} --scale {scale} -r 1 --data_device cpu --skip_train --iteration 100"
         print(cmd)
         if not dry_run:
             os.system(cmd)
-
+        cmd = f"python render_ours_downsampl.py -m {model_path} --scale {scale} -r 1 --data_device cpu --skip_train --iteration 500"
+        print(cmd)
+        if not dry_run:
+            os.system(cmd)
+        cmd = f"python render_ours_downsampl.py -m {model_path} --scale {scale} -r 1 --data_device cpu --skip_train --iteration 1000"
+        print(cmd)
+        if not dry_run:
+            os.system(cmd)
     return True
 
 

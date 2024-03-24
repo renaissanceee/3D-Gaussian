@@ -216,9 +216,14 @@ def readCamerasFromTransforms(path, transformsfile, white_background, extension=
             w2c = np.linalg.inv(c2w)
             R = np.transpose(w2c[:3,:3])  # R is stored transposed due to 'glm' in CUDA code
             T = w2c[:3, 3]
-
+            # print(path)
+            # print(cam_name)
+            # asd
             image_path = os.path.join(path, cam_name)
             image_name = Path(cam_name).stem
+            image_path=image_path.replace("./","")
+            # print(image_path)
+            # asd
             image = Image.open(image_path)
 
             im_data = np.array(image.convert("RGBA"))

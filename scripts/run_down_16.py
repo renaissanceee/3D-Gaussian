@@ -11,7 +11,7 @@ factors = [8, 8, 8, 8, 8, 8, 8]
 
 excluded_gpus = set([])
 
-output_dir = "360v2_ours_stmt_swin_x16"
+output_dir = "benchmark_360v2_stmt_down"
 
 dry_run = False
 
@@ -19,13 +19,33 @@ jobs = list(zip(scenes, factors))
 
 
 def train_scene(gpu, scene, factor):
-    for scale in [8, 4, 2]:
-        model_path = os.path.join(output_dir,scene,"swin_x"+str(scale))
-        # model_path = os.path.join(output_dir, scene)
-        cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python metrics.py -m {model_path} -r {scale}"
-        print(cmd)
-        if not dry_run:
-            os.system(cmd)
+    downsampl_rate=32
+    if scene == "bicycle":
+        scale=4946//downsampl_rate
+    if scene == "bonsai":
+        scale = 3118// downsampl_rate
+    if scene == "counter":
+        scale = 3115// downsampl_rate
+    if scene == "garden":
+        scale = 5187// downsampl_rate
+    if scene == "stump":
+        scale = 4978// downsampl_rate
+    if scene == "kitchen":
+        scale = 3115// downsampl_rate
+    if scene == "room":
+        scale = 3114// downsampl_rate
+
+    print(scene, scale)
+    # rendering
+    # cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python render_lower.py -m {output_dir}/{scene} -r {scale} --skip_train --data_device cpu --scale_factor {downsampl_rate}"
+    # print(cmd) # --scale_factor: test_pred_32 保存路径
+    # if not dry_run:
+    #     os.system(cmd)
+    # metrics
+    cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python metrics.py -m {output_dir}/{scene} -r {downsampl_rate}"
+    print(cmd)
+    if not dry_run:
+        os.system(cmd)
 
     return True
 

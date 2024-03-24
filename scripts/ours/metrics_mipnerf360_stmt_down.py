@@ -6,8 +6,10 @@ from concurrent.futures import ThreadPoolExecutor
 import queue
 import time
 
-scenes = ["bicycle", "bonsai", "counter", "garden", "stump", "kitchen", "room"]
-factors = [1, 1, 1, 1, 1, 1, 1]
+# scenes = ["bicycle", "bonsai", "counter", "garden", "stump", "kitchen", "room"]
+# factors = [1, 1, 1, 1, 1, 1, 1]
+scenes = ["flowers", "treehill"]
+factors = [1, 1]
 
 
 excluded_gpus = set([])
@@ -20,7 +22,7 @@ jobs = list(zip(scenes, factors))
 
 
 def train_scene(gpu, scene, factor):
-    for scale in [8, 4, 2, 1]:
+    for scale in [8,4,2]:
         model_path = os.path.join(output_dir,scene,"resize_x"+str(scale))
         # model_path = os.path.join(output_dir, scene)
         cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python metrics.py -m {model_path} -r {scale}"

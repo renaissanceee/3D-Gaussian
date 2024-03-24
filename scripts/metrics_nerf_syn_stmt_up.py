@@ -1,17 +1,15 @@
 # single-scale training and multi-scale testing setting proposed in mip-splatting
-
 import os
 import GPUtil
 from concurrent.futures import ThreadPoolExecutor
 import queue
 import time
 
-scenes = ["bicycle", "bonsai", "counter", "garden", "stump", "kitchen", "room"]
-factors = [8, 8, 8, 8, 8, 8, 8]
+scenes = ["ship", "drums", "ficus", "hotdog", "lego", "materials", "mic", "chair"]
 
-excluded_gpus = set([])
+factors = [8] * len(scenes)
 
-output_dir = "360v2_ours_stmt_swin_x16"
+output_dir = "/cluster/scratch/jiezcao/jiameng/3dgs/benchmark_nerf_synthetic_stmt_up"
 
 dry_run = False
 
@@ -19,10 +17,8 @@ jobs = list(zip(scenes, factors))
 
 
 def train_scene(gpu, scene, factor):
-    for scale in [8, 4, 2]:
-        model_path = os.path.join(output_dir,scene,"swin_x"+str(scale))
-        # model_path = os.path.join(output_dir, scene)
-        cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python metrics.py -m {model_path} -r {scale}"
+    for scale in [8, 4, 2, 1]:
+        cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python metrics.py -m {output_dir}/{scene} -r {scale}"
         print(cmd)
         if not dry_run:
             os.system(cmd)
@@ -44,7 +40,7 @@ def dispatch_jobs(jobs, executor):
     while jobs or future_to_job:
         # Get the list of available GPUs, not including those that are reserved.
         all_available_gpus = set(GPUtil.getAvailable(order="first", limit=10, maxMemory=0.1))
-        available_gpus = list(all_available_gpus - reserved_gpus - excluded_gpus)
+        available_gpus = list(all_available_gpus - reserved_gpus)
 
         # Launch new jobs on available GPUs
         while available_gpus and jobs:
@@ -73,3 +69,4 @@ def dispatch_jobs(jobs, executor):
 # Using ThreadPoolExecutor to manage the thread pool
 with ThreadPoolExecutor(max_workers=8) as executor:
     dispatch_jobs(jobs, executor)
+

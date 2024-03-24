@@ -9,30 +9,31 @@ scenes = ["ship", "drums", "ficus", "hotdog", "lego", "materials", "mic", "chair
 
 factors = [1] * len(scenes)
 
-output_dir = "benchmark_nerf_synthetic_stmt"
-dataset_dir = "multi-scale"
+output_dir = "/cluster/scratch/jiezcao/jiameng/3dgs/benchmark_nerf_synthetic_stmt"
+dataset_dir = "/cluster/work/cvl/jiezcao/jiameng/3D-Gaussian/nerf_synthetic"
 
 dry_run = False
-
 jobs = list(zip(scenes, factors))
 
+
 def train_scene(gpu, scene, factor):
-    cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python train.py -s {dataset_dir}/{scene} -m {output_dir}/{scene} --eval --white_background --port {6209+int(gpu)} --kernel_size 0.1"
+    cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python train.py -s {dataset_dir}/{scene} -m {output_dir}/{scene} -r {factor} --eval --white_background --port {6000 + int(gpu)}"
     print(cmd)
     if not dry_run:
         os.system(cmd)
 
-    cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python render.py -m {output_dir}/{scene} --skip_train"
-    print(cmd)
-    if not dry_run:
-        os.system(cmd)
-
-    cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python metrics.py -m {output_dir}/{scene}"
-    print(cmd)
-    if not dry_run:
-        os.system(cmd)
+    for scale in [8, 4, 2, 1]:
+        cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python render.py -m {output_dir}/{scene} -r {scale}  --scale {scale} --data_device cpu --skip_train"
+        print(cmd)
+        if not dry_run:
+            os.system(cmd)
+        # cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python metrics.py -m {output_dir}/{scene} -r {scale}"
+        # print(cmd)
+        # if not dry_run:
+        #     os.system(cmd)
 
     return True
+
         
     
 def worker(gpu, scene, factor):

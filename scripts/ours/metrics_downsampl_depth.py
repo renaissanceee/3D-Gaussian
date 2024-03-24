@@ -1,15 +1,17 @@
 # single-scale training and multi-scale testing setting proposed in mip-splatting
+
 import os
 import GPUtil
 from concurrent.futures import ThreadPoolExecutor
 import queue
 import time
 
-scenes = ["ship", "drums", "ficus", "hotdog", "lego", "materials", "mic", "chair"]
+scenes = ["bicycle", "bonsai", "counter", "garden", "stump", "kitchen", "room","flowers", "treehill"]
+factors = [8, 8, 8, 8, 8, 8, 8, 8, 8]
 
-factors = [1] * len(scenes)
+excluded_gpus = set([])
 
-output_dir = "benchmark_nerf_synthetic_ours_stmt"
+output_dir = "360v2_ours_stmt_downsampl_depth"
 
 dry_run = False
 
@@ -17,23 +19,19 @@ jobs = list(zip(scenes, factors))
 
 
 def train_scene(gpu, scene, factor):
-    cmd = f"python create_fused_ply.py -m {model_dir}/{scene} --output_ply fused/{scene}_fused_x1.ply"
-    print(cmd)
-    os.system(cmd)
-    
-    # cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python metrics.py -m {output_dir}/{scene}"
-    # print(cmd)
-    # if not dry_run:
-    #     os.system(cmd)
-    # 
-    # return True
+    for scale in [4, 2, 1]:
+        model_path = os.path.join(output_dir,scene,"resize_x"+str(scale))
+        cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python metrics.py -m {model_path} -r {scale}"
+        print(cmd)
+        if not dry_run:
+            os.system(cmd)
 
+    return True
 
 def worker(gpu, scene, factor):
     print(f"Starting job on GPU {gpu} with scene {scene}\n")
     train_scene(gpu, scene, factor)
     print(f"Finished job on GPU {gpu} with scene {scene}\n")
-    # This worker function starts a job and returns when it's done.
 
 
 def dispatch_jobs(jobs, executor):
@@ -43,7 +41,7 @@ def dispatch_jobs(jobs, executor):
     while jobs or future_to_job:
         # Get the list of available GPUs, not including those that are reserved.
         all_available_gpus = set(GPUtil.getAvailable(order="first", limit=10, maxMemory=0.1))
-        available_gpus = list(all_available_gpus - reserved_gpus)
+        available_gpus = list(all_available_gpus - reserved_gpus - excluded_gpus)
 
         # Launch new jobs on available GPUs
         while available_gpus and jobs:
@@ -72,4 +70,3 @@ def dispatch_jobs(jobs, executor):
 # Using ThreadPoolExecutor to manage the thread pool
 with ThreadPoolExecutor(max_workers=8) as executor:
     dispatch_jobs(jobs, executor)
-

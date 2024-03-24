@@ -6,28 +6,41 @@ from concurrent.futures import ThreadPoolExecutor
 import queue
 import time
 
+
 scenes = ["bicycle", "bonsai", "counter", "garden", "stump", "kitchen", "room"]
-factors = [8, 8, 8, 8, 8, 8, 8]
+factors = [1, 1, 1, 1, 1, 1, 1]
 
 excluded_gpus = set([])
 
-output_dir = "360v2_ours_stmt_swin_x16"
+output_dir = "360v2_ours_stmt_resize_down"
 
 dry_run = False
 
 jobs = list(zip(scenes, factors))
-
-
 def train_scene(gpu, scene, factor):
-    for scale in [8, 4, 2]:
-        model_path = os.path.join(output_dir,scene,"swin_x"+str(scale))
-        # model_path = os.path.join(output_dir, scene)
-        cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python metrics.py -m {model_path} -r {scale}"
+    get_folder = "/cluster/work/cvl/jiezcao/jiameng/3D-Gaussian_new/benchmark_360v2_stmt_down/"
+    trained_gaussian = os.path.join(get_folder, scene, "point_cloud/iteration_30000/point_cloud.ply")
+
+    for scale in [32]:
+        pseudo_gt = os.path.join(get_folder, scene, "pseudo_gt/resize_x" + str(scale))
+        model_path= os.path.join(output_dir,scene,"resize_x"+str(scale))
+        print(pseudo_gt)
+        cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python train_two_stage.py -s {pseudo_gt} -m {model_path} -r 1 --port {2009 + int(gpu)} --load_gaussian {trained_gaussian}"
+        print(cmd)
+        if not dry_run:
+            os.system(cmd)
+
+        cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python render_ours.py -m {model_path} -r 1 --data_device cpu --skip_train  --scale {scale}"
+        print(cmd)
+        if not dry_run:
+            os.system(cmd)
+        cmd = f"OMP_NUM_THREADS=4 CUDA_VISIBLE_DEVICES={gpu} python render_ours.py -m {model_path} -r 1 --data_device cpu --skip_train  --scale {scale} --iteration 7000"
         print(cmd)
         if not dry_run:
             os.system(cmd)
 
     return True
+
 
 
 def worker(gpu, scene, factor):
@@ -73,3 +86,4 @@ def dispatch_jobs(jobs, executor):
 # Using ThreadPoolExecutor to manage the thread pool
 with ThreadPoolExecutor(max_workers=8) as executor:
     dispatch_jobs(jobs, executor)
+
